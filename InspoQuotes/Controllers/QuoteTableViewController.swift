@@ -43,6 +43,12 @@ class QuoteTableViewController: UITableViewController {
         //Sets the PaymentQueue delegate method to self (NOTE: this is required):
         SKPaymentQueue.default().add(self)
         
+        //If the user purchased premium content...
+        if isPurchased(){
+            //...show the premium content:
+            showPremiumQuotes()
+        }
+        
         // Uncomment the following line to preserve selection between presentations
         // self.clearsSelectionOnViewWillAppear = false
 
@@ -76,6 +82,9 @@ class QuoteTableViewController: UITableViewController {
             
             //Sets the cell's textLabel to the appropriate quote for the index of the array:
             cell.textLabel?.text = quotesToShow[indexPath.row]
+            
+            cell.textLabel?.textColor = #colorLiteral(red: 1, green: 1, blue: 0.9998808503, alpha: 1)
+            cell.accessoryType = .none
         //Otherwise...
         } else {
             //Sets the text label of the new cell to the following string:
@@ -154,6 +163,33 @@ class QuoteTableViewController: UITableViewController {
         tableView.deselectRow(at: indexPath, animated: true)
     }
     
+    //MARK: - Show Premium Content:
+    //Shows premium quotes as a method:
+    func showPremiumQuotes() {
+        //Adds the premium quotes to the quotesToShow array:
+        quotesToShow.append(contentsOf: premiumQuotes)
+        
+        /*Reloads the tableView after adding the premium quotes to the quotesToShow array (NOTE: this is VERY important):
+        */
+        tableView.reloadData()
+    }
+    
+    func isPurchased() -> Bool {
+        //Initializes a new constant equal to the boolean for the key of productID:
+        let purchaseStatus = UserDefaults.standard.bool(forKey: productID)
+        
+        //If purchaseStatus is true...
+        if purchaseStatus {
+            //...return true...
+            return true
+            //else...
+        } else {
+            //...they didn't pay for it:
+            print("Freeloader.")
+            return false
+        }
+    }
+    
     //MARK: - In-app Purchase Methods:
     func buyPremiumQuotes() {
         /*Condition check to make sure the user has the permissions to actually make purchases (i.e. doesn't have parental controls):
@@ -188,6 +224,13 @@ extension QuoteTableViewController: SKPaymentTransactionObserver{
             //If the user paid for it and the transaction went through...
             if (transaction.transactionState == .purchased){
                 print("Transaction succeeded.")
+                
+                //Shows the premium quotes if the transaction succeeded.
+                showPremiumQuotes()
+                
+                /*IMPORTANT: use UserDefaults or whatever data model you have to set a boolean to "true" if the user has purchased certain content (the key will be the productID (from Apple) of the content):
+                */
+                UserDefaults.standard.setValue(true, forKey: productID)
                 
                 /*Indicates to the PaymentQueue that the transaction is complete for the current transaction:
                 */

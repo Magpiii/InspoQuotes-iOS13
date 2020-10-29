@@ -60,7 +60,14 @@ class QuoteTableViewController: UITableViewController {
 
     override func numberOfSections(in tableView: UITableView) -> Int {
         // #warning Incomplete implementation, return the number of sections
-        return 1
+        
+        //If the premium content was purchased, just show the array.
+        if isPurchased(){
+            return quotesToShow.count
+        } else {
+            //Shows the purchasing option:
+            return quotesToShow.count + 1
+        }
     }
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -169,6 +176,10 @@ class QuoteTableViewController: UITableViewController {
         //Adds the premium quotes to the quotesToShow array:
         quotesToShow.append(contentsOf: premiumQuotes)
         
+        /*IMPORTANT: use UserDefaults or whatever data model you have to set a boolean to "true" if the user has purchased certain content (the key will be the productID (from Apple) of the content). Since this line is within this method, every time this method is called, the UserDefaults is updated each time the user has purchased premium content. This is useful if the user gets a new Apple device:
+        */
+        UserDefaults.standard.setValue(true, forKey: productID)
+        
         /*Reloads the tableView after adding the premium quotes to the quotesToShow array (NOTE: this is VERY important):
         */
         tableView.reloadData()
@@ -210,8 +221,11 @@ class QuoteTableViewController: UITableViewController {
         }
     }
     
+    
+    //MARK: - Restore Transactions:
+    
     @IBAction func restorePressed(_ sender: UIBarButtonItem) {
-        
+        SKPaymentQueue.default().restoreCompletedTransactions()
     }
 }
 
@@ -228,10 +242,6 @@ extension QuoteTableViewController: SKPaymentTransactionObserver{
                 //Shows the premium quotes if the transaction succeeded.
                 showPremiumQuotes()
                 
-                /*IMPORTANT: use UserDefaults or whatever data model you have to set a boolean to "true" if the user has purchased certain content (the key will be the productID (from Apple) of the content):
-                */
-                UserDefaults.standard.setValue(true, forKey: productID)
-                
                 /*Indicates to the PaymentQueue that the transaction is complete for the current transaction:
                 */
                 SKPaymentQueue.default().finishTransaction(transaction)
@@ -243,6 +253,16 @@ extension QuoteTableViewController: SKPaymentTransactionObserver{
                 /*Must indicate that transaction is finished in both cases, whether it succeeds or not:
                 */
                 SKPaymentQueue.default().finishTransaction(transaction)
+                
+                //Else if the transaction was already purchased on a previous device...
+            } else if (transaction.transactionState == .restored) {
+                //Shows the premium content if the content was already purchased:
+                showPremiumQuotes()
+                
+                print("Transaction restored.")
+                
+                //Removes the restore button if purchases have already been restored: 
+                navigationItem.setRightBarButton(nil, animated: true)
             }
         }
     }
